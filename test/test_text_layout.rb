@@ -14,36 +14,47 @@ class TestTextLayout < Test::Unit::TestCase
   end
 
   def test_table_simple
-    table = [
+    assert_table [
       [1, 2],
       [3, 4]
-    ]
-    assert_equal <<-RESULT, TextLayout::Table.new(table).layout
+    ], <<-RESULT
 | 1 | 2 |
 | 3 | 4 |
-RESULT
+    RESULT
   end
 
   def test_table_multipleline
-    table = [
+    assert_table [
       ["1\n2", 2],
       [3, 4]
-    ]
-    assert_equal <<-RESULT, TextLayout::Table.new(table).layout
+    ], <<-RESULT
 | 1 | 2 |
 | 2 |   |
 | 3 | 4 |
-RESULT
+    RESULT
   end
 
   def test_table_span
-    table = [
+    assert_table [
       [{:value => 1, :rowspan => 2}, 2, 3],
       [{:value => 4, :colspan => 2}]
-    ]
-    assert_equal <<-RESULT, TextLayout::Table.new(table).layout
+    ], <<-RESULT
 | 1 | 2 | 3 |
 |   |     4 |
-RESULT
+    RESULT
+  end
+
+  def test_expand_multicolumn
+    assert_table [
+      [1, 2, 3],
+      [4, {:value => "too loooooong", :colspan => 2}]
+    ], <<-RESULT
+| 1 |     2 |     3 |
+| 4 | too loooooong |
+    RESULT
+  end
+
+  def assert_table(array, result)
+    assert_equal result, TextLayout::Table.new(array).layout
   end
 end

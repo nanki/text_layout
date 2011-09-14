@@ -4,5 +4,5 @@ lib/text_layout/wrap.rb
 lib/text_layout.rb
 Manifest.txt
 Rakefile
-README.txt
+README.rdoc
 test/test_text_layout.rb
