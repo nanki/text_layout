@@ -1,5 +1,8 @@
+# -*- coding: UTF-8 -*-;
 require "test/unit"
 require "text_layout"
+
+$KCODE = 'u'
 
 class TestTextLayout < Test::Unit::TestCase
   def test_wrap_private
