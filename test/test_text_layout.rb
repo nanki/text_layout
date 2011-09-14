@@ -69,6 +69,6 @@ class TestTextLayout < Test::Unit::TestCase
   end
 
   def assert_table(array, result)
-    assert_equal result, TextLayout::Table.new(array).layout
+    assert_equal result.rstrip, TextLayout::Table.new(array).layout
   end
 end
