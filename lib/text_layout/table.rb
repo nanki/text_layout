@@ -36,12 +36,12 @@ class TextLayout::Table
       cols.each_with_index do |attr, col|
         attr = normalize(attr)
 
+        unless col = layout[row].index(nil)
+          col = layout[row].size
+        end
+
         if !attr[:rowspan] && !attr[:colspan]
-          if i = layout[row].index(nil)
-            layout[row][i] = Cell.new(i, row, attr)
-          else
-            layout[row] << Cell.new(layout[row].size, row, attr)
-          end
+          layout[row][col] = Cell.new(col, row, attr)
         else
           span = Span.new(col, row, attr)
           spanss[:row][row...row+attr[:rowspan]] <<= span if attr[:rowspan]
