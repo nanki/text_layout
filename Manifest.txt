@@ -1,8 +1,8 @@
-.autotest
 History.txt
-Manifest.txt
-README.txt
-Rakefile
-bin/text_layout
+lib/text_layout/table.rb
+lib/text_layout/wrap.rb
 lib/text_layout.rb
+Manifest.txt
+Rakefile
+README.txt
 test/test_text_layout.rb
