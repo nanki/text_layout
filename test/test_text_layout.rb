@@ -1,3 +1,4 @@
+#!rake test
 # -*- coding: UTF-8 -*-;
 require "test/unit"
 require "text_layout"
@@ -54,6 +55,16 @@ class TestTextLayout < Test::Unit::TestCase
     ], <<-RESULT
 | 1 |     2 |     3 |
 | 4 | too loooooong |
+    RESULT
+  end
+
+  def test_align
+    assert_table [
+      [{:value => 1, :align => :left}, {:value => 2, :align => :center}, {:value => 3, :align => :right}],
+      [ {:value => "oooooooooooooooooooo", :colspan => 3}]
+    ], <<-RESULT
+| 1     |   2   |    3 |
+| oooooooooooooooooooo |
     RESULT
   end
 

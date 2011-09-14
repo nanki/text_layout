@@ -110,7 +110,7 @@ class TextLayout::Table
             max[:col][col]
           end
 
-        line << justify(cell.attr[:value][n].to_s, width)
+        line << align(cell.attr[:value][n].to_s, width, cell.attr[:align] || :right)
       end
 
       result += "| " + line.join(" | ") + " |\n"
@@ -123,16 +123,16 @@ class TextLayout::Table
     array.inject(0) {|r, i| r + i }
   end
 
-  def justify(str, width, type=:right)
+  def align(str, width, type=:right)
     pad = width - str.display_width
     pad = 0 if pad < 0 
     case type
-    when :right
-      " " * pad + str
     when :left
       str + " " * pad
     when :center
       " " * (pad / 2) + str + " " * (pad - pad / 2)
+    else # :right
+      " " * pad + str
     end
   end
 end
