@@ -48,6 +48,13 @@ Text layout engine for CUI apps.
 
 * $ gem install text_layout
 
+== OTHER CHOICES
+
+* https://github.com/aptinio/text-table
+* https://github.com/jwulff/pretty_table
+* https://github.com/visionmedia/terminal-table
+* http://rubyworks.github.com/ansi/docs/api/ANSI/Table.html
+
 == DEVELOPERS:
 
 After checking out the source, run:
