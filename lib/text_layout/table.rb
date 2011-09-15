@@ -143,7 +143,7 @@ class TextLayout::Table
   end
 
   def sum(array)
-    array.inject(0) {|r, i| r + i }
+    array.to_a.inject(0) {|r, i| r + i }
   end
 
   def align(str, width, type=:right)

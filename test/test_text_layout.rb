@@ -63,6 +63,13 @@ class TestTextLayout < Test::Unit::TestCase
     RESULT
   end
 
+  def test_successive_colspan
+    assert_table [[{:colspan => 2, :value => "a"}] * 2], <<-RESULT
+| a | a |
+    RESULT
+  end
+
+
   def assert_table(array, result)
     assert_equal result.rstrip, TextLayout::Table.new(array).layout
   end
