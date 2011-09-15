@@ -135,6 +135,9 @@ class TextLayout::Table
       cell = {:value => cell}
     end
 
+    cell.delete :colspan if cell[:colspan] == 1
+    cell.delete :rowspan if cell[:rowspan] == 1
+
     cell[:value] = cell[:value].to_s.lines.map(&:strip)
     cell
   end
