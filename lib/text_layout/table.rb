@@ -121,7 +121,7 @@ class TextLayout::Table
           end
 
         n = display_row - sum(@column_size[:row][0...cell.row])
-        line << align(cell.attr[:value][n].to_s, width, cell.attr[:align] || :right)
+        line << align(cell.attr[:value][n].to_s, width, cell.attr[:align] || :auto)
       end
 
       lines << line
@@ -146,10 +146,16 @@ class TextLayout::Table
     array.to_a.inject(0) {|r, i| r + i }
   end
 
-  def align(str, width, type=:right)
+  def align(str, width, type=:auto)
     pad = width - str.display_width
     pad = 0 if pad < 0 
     case type
+    when :auto
+      if width * 0.85 < pad
+        align(str, width, :center)
+      else
+        align(str, width, :right)
+      end
     when :left
       str + " " * pad
     when :center
