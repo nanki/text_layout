@@ -17,11 +17,11 @@ class TextLayout::Table
 
   class Cell < Struct.new(:col, :row, :attr)
     def width
-      attr[:value].map(&:display_width).max
+      attr[:value].map(&:display_width).max || 0
     end
 
     def height
-      attr[:value].size
+      [attr[:value].size, 1].max
     end
   end
 
