@@ -45,8 +45,8 @@ class TextLayout::Table
 
   def layout
     unknot
-    calculate_column_size
-    expand_column_size
+    calculate_cell_size
+    expand_cell_size
     build_string.join("\n")
   end
 
@@ -82,35 +82,37 @@ class TextLayout::Table
     end
 
     [:row, :col].each{|dir| @border[dir].map!{|v| v ? 1 : 0 } }
+    @num_rows = @unknotted.size
+    @num_cols = @unknotted.first.size
   end
 
-  def calculate_column_size
-    @column_size = {:row => [0] * @unknotted.size, :col => [0] * @unknotted.first.size}
+  def calculate_cell_size
+    @cell_size = {:row => [0] * @num_rows, :col => [0] * @num_cols}
 
     @unknotted.each_with_index do |cols, row|
       cols.each_with_index do |cell, col|
         next if Span === cell && !cell.main?(col, row)
 
-        @column_size[:col][col] = [@column_size[:col][col], cell.width ].max unless cell.attr[:colspan]
-        @column_size[:row][row] = [@column_size[:row][row], cell.height].max unless cell.attr[:rowspan]
+        @cell_size[:col][col] = [@cell_size[:col][col], cell.width ].max unless cell.attr[:colspan]
+        @cell_size[:row][row] = [@cell_size[:row][row], cell.height].max unless cell.attr[:rowspan]
       end
     end
   end
 
-  def expand_column_size
+  def expand_cell_size
     [[:col, column_border_width], [:row, @options[:border] ? 1 : 0]].each do |dir, margin|
       @spanss[dir].each do |range, spans|
         rstart, rsize = range
         spans.each do |span|
-          border_size = sum(@border[dir][rstart, rsize-1])
-          size = sum(@column_size[dir][*range]) + margin * border_size
+          borders = sum(@border[dir][rstart, rsize-1])
+          size = sum(@cell_size[dir][*range]) + margin * borders
           diff = (dir == :col ? span.width : span.height) - size
 
           next unless diff > 0
 
           q, r = diff.divmod rsize
-          (rstart...rstart + rsize).each_with_index do |i, rr|
-            @column_size[dir][i] += q + (rr < r ? 1 : 0)
+          rsize.times do |i|
+            @cell_size[dir][rstart + i] += q + (i < r ? 1 : 0)
           end
         end
       end
@@ -120,17 +122,16 @@ class TextLayout::Table
   def build_string
     lines = []
 
-    total_lines = sum(@column_size[:row])
+    total_lines = sum(@cell_size[:row])
+
     if @options[:border]
       total_lines += sum(@border[:row])
+      lines << row_border(-1) if @options[:border][:top]
     end
-
-    lines << row_border(-1, @unknotted.first) if @options[:border] && @options[:border][:top]
-    total_lines += 1 if @options[:border] && @options[:border][:bottom]
 
     total_lines.times do |display_row|
       n = display_row
-      row, on_border = @column_size[:row].each_with_index do |height, i|
+      row, on_border = @cell_size[:row].each_with_index do |height, i|
         n -= height
         break i, false if n < 0
 
@@ -145,35 +146,44 @@ class TextLayout::Table
       line << cross(-1, row) if on_border
 
       @unknotted[row].each_with_index do |cell, col|
-        n = display_row - sum(@column_size[:row][0...cell.row])
-        n -= sum(@border[:row][0...cell.row]) if @options[:border]
+        n = display_row - sum(@cell_size[:row][0, cell.row])
+        n -= sum(@border[:row][0, cell.row]) if @options[:border]
         value = cell.attr[:value][n]
 
-        if on_border
-          if border = cell_row_border(col, row, cell)
-            line << border
-            next line << cross(col, row)
-          elsif !value
-            cell_width = @column_size[:col][col] + @options[:padding].display_width * 2
-            line << " " * cell_width
-            next line << cross(col, row)
+        type =
+          unless on_border
+            :value
+          else
+            if row_border_visible?(col, row)
+              :cell_border
+            elsif !value
+              :blank
+            else
+              :value
+            end
           end
+
+        case type
+        when :cell_border
+          line << cell_border(col)
+        when :blank
+          line << " " * cell_width(col)
+        when :value
+          next unless cell.col == col
+          line << cell_format % align(value.to_s, width_with_colspan(cell), cell.attr[:align] || @options[:align])
         end
 
-        next unless cell.col == col
-
-        line << cell_format % align(value.to_s, width_with_colspan(cell), cell.attr[:align] || @options[:align])
         line << cross(col, row) if on_border
       end
 
       if on_border
-        line = line.join
+        lines << line.join
       else
-        line = line_format % line.join(@options[:col_border])
+        lines << line_format % line.join(@options[:col_border])
       end
-
-      lines << line
     end
+
+    lines << row_border(@num_rows - 1) if @options[:border] && @options[:border][:bottom]
 
     lines
   end
@@ -181,30 +191,29 @@ class TextLayout::Table
   def width_with_colspan(cell)
     col = cell.col
     if Span === cell && colspan = cell.attr[:colspan]
-      border_size = sum(@border[:col][col, colspan - 1])
-      sum(@column_size[:col][col...col+colspan]) + column_border_width * border_size
+      borders = sum(@border[:col][col, colspan - 1])
+      sum(@cell_size[:col][col, colspan]) + column_border_width * borders
     else
-      @column_size[:col][col]
+      @cell_size[:col][col]
     end
   end
 
-  def row_border(row, cols)
+  def row_border(row)
     line = ""
     line << cross(-1, row)
-    cols.each_with_index do |cell, col|
-      line << cell_row_border(col, row, cell)
+    @num_cols.times do |col|
+      line << cell_border(col)
       line << cross(col, row)
     end
     line
   end
 
-  def cell_row_border(col, row, cell)
-    if row_border_visible?(col, row)
-      cell_width = @column_size[:col][col] + @options[:padding].display_width * 2
-      @options[:row_border] * cell_width
-    else
-      false
-    end
+  def cell_width(col)
+      @cell_size[:col][col] + @options[:padding].display_width * 2
+  end
+
+  def cell_border(col)
+    @options[:row_border] * cell_width(col)
   end
 
   def row_border_visible?(col, row)
