@@ -8,7 +8,7 @@ class TextLayout::Table
   end
 
   def column_separator
-    @column_separator ||= @options[:padding] + @options[:column_separator] + @options[:padding] 
+    @column_separator ||= @options[:padding] + @options[:column_separator] + @options[:padding]
   end
 
   def line_format
@@ -24,7 +24,7 @@ class TextLayout::Table
       attr[:value].size
     end
   end
-  
+
   class Span < Cell
     def main?(col, row)
       self.col == col && self.row == row
@@ -42,6 +42,7 @@ class TextLayout::Table
   def unknot
     @unknotted = @table.map{[]}
     @spanss = {:row => Hash.new{[]}, :col => Hash.new{[]}}
+    @border = {:row => [], :col => []}
 
     @table.each_with_index do |cols, row|
       cols.each_with_index do |attr, col|
@@ -53,28 +54,31 @@ class TextLayout::Table
           @unknotted[row][col] = Cell.new(col, row, attr)
         else
           span = Span.new(col, row, attr)
-          @spanss[:row][row...row+rowspan] <<= span if rowspan
-          @spanss[:col][col...col+colspan] <<= span if colspan
-          
+          @spanss[:row][[row, rowspan]] <<= span if rowspan
+          @spanss[:col][[col, colspan]] <<= span if colspan
+
           (rowspan || 1).times do |rr|
             (colspan || 1).times do |cc|
               @unknotted[row+rr][col+cc] = span
             end
           end
         end
+
+        @border[:row][row - 1] ||= @unknotted[row][col] != @unknotted[row - 1][col] if row > 0
+        @border[:col][col - 1] ||= @unknotted[row][col] != @unknotted[row][col - 1] if col > 0
       end
     end
   end
 
   def calculate_column_size
-    @column_size = {:row => [], :col => []}
+    @column_size = {:row => [0] * @unknotted.size, :col => [0] * @unknotted.first.size}
 
     @unknotted.each_with_index do |cols, row|
       cols.each_with_index do |cell, col|
         next if Span === cell && !cell.main?(col, row)
 
-        @column_size[:col][col] = [@column_size[:col][col] || 0, cell.width ].max unless cell.attr[:colspan]
-        @column_size[:row][row] = [@column_size[:row][row] || 0, cell.height].max unless cell.attr[:rowspan]
+        @column_size[:col][col] = [@column_size[:col][col], cell.width ].max unless cell.attr[:colspan]
+        @column_size[:row][row] = [@column_size[:row][row], cell.height].max unless cell.attr[:rowspan]
       end
     end
   end
@@ -82,15 +86,16 @@ class TextLayout::Table
   def expand_column_size
     [[:col, column_separator.display_width], [:row, 0]].each do |dir, margin|
       @spanss[dir].each do |range, spans|
-        range_size = range.end - range.begin
+        rstart, rsize = range
         spans.each do |span|
-          size = sum(@column_size[dir][range]) + margin * (range_size - 1)
+          border_size = sum(@border[dir][rstart, rsize-1].map{|v|v ? 1 : 0})
+          size = sum(@column_size[dir][*range]) + margin * border_size
           diff = (dir == :col ? span.width : span.height) - size
 
           next unless diff > 0
 
-          q, r = diff.divmod range_size 
-          range.each_with_index do |i, rr|
+          q, r = diff.divmod rsize
+          (rstart...rstart + rsize).each_with_index do |i, rr|
             @column_size[dir][i] += q + (rr < r ? 1 : 0)
           end
         end
@@ -106,16 +111,17 @@ class TextLayout::Table
         if n - height >= 0
           n -= height
         else
-          break i 
+          break i
         end
       end
 
       line = []
       @unknotted[row].each_with_index do |cell, col|
         next unless cell.col == col
-        width = 
+        width =
           if Span === cell && colspan = cell.attr[:colspan]
-            sum(@column_size[:col][col...col+colspan]) + column_separator.display_width * (colspan - 1)
+            border_size = sum(@border[:col][col, colspan - 1].map{|v|v ? 1 : 0})
+            sum(@column_size[:col][col...col+colspan]) + column_separator.display_width * border_size
           else
             @column_size[:col][col]
           end
@@ -148,7 +154,7 @@ class TextLayout::Table
 
   def align(str, width, type=:auto)
     pad = width - str.display_width
-    pad = 0 if pad < 0 
+    pad = 0 if pad < 0
     case type
     when :auto
       if width * 0.85 < pad
