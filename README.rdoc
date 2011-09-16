@@ -4,7 +4,7 @@
 
 == DESCRIPTION:
 
-Text layout engine for CUI apps.
+Text layout engine for CUI apps with a pretty table.
 
 == FEATURES/PROBLEMS:
 
