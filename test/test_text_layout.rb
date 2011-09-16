@@ -15,10 +15,12 @@ class TestTextLayout < Test::Unit::TestCase
   def test_table_simple
     assert_table [
       [1, 2],
-      [3, 4]
+      [3, 4],
+      [5, 6]
     ], <<-RESULT
 | 1 | 2 |
 | 3 | 4 |
+| 5 | 6 |
     RESULT
   end
 
@@ -69,7 +71,33 @@ class TestTextLayout < Test::Unit::TestCase
     RESULT
   end
 
-  def assert_table(array, result)
-    assert_equal result.rstrip, TextLayout::Table.new(array).layout
+  def test_border
+    assert_table [
+      [{:value => "", :colspan => 3}],
+      [1,2,3],
+      [{:value => "a", :rowspan=>2},"a",{:value => "a\na", :rowspan => 2}],
+      ["a"]
+    ], <<-RESULT, :border => true
++-----------+
+|           |
++---+---+---+
+| 1 | 2 | 3 |
++---+---+---+
+| a | a | a |
+|   +---+ a |
+|   | a |   |
++---+---+---+
+    RESULT
+  end
+
+  def assert_table(array, expected, options={})
+    result = TextLayout::Table.new(array, options).layout
+
+    if expected.rstrip != result
+      puts
+      puts result
+    end
+
+    assert_equal expected.rstrip, result
   end
 end
