@@ -2,6 +2,7 @@ class TextLayout::Table
   def initialize(table, options = {})
     @table = table
     @options = {
+      :align => :auto,
       :col_border => "|",
       :row_border => "-",
       :cross => "+",
@@ -161,7 +162,7 @@ class TextLayout::Table
 
         next unless cell.col == col
 
-        line << cell_format % align(value.to_s, width_with_colspan(cell), cell.attr[:align] || :auto)
+        line << cell_format % align(value.to_s, width_with_colspan(cell), cell.attr[:align] || @options[:align])
         line << cross(col, row) if on_border
       end
 

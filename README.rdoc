@@ -11,6 +11,7 @@ Text layout engine for CUI apps.
 * Full-width character support.
 * Line wrapping.
 * Table layout with colspan and rowspan.
+* Table with border.
 
 == SYNOPSIS:
 
@@ -24,21 +25,27 @@ Text layout engine for CUI apps.
       [{:colspan => 2, :value => "37Wh(13\")"}, "40Wh(13\")", {:colspan => 2, :value => "50Wh(13\")"}]
     ]
 
-    puts TextLayout::Table.new(table).layout
+    puts TextLayout::Table.new(table, :border => true).layout
 
     ---
 
-    |                                                                                    Table of models |
+    +----------------------------------------------------------------------------------------------------+
+    |                                          Table of models                                           |
+    +------------------+---------------+-----------+-----------+--------------------+--------------------+
     |            Model |    Early 2008 | Late 2008 |  Mid 2009 |          Late 2010 |           Mid 2011 |
+    +------------------+---------------+-----------+-----------+--------------------+--------------------+
     | Model Identifier | MacBookAir1,1 |         MacBookAir2,1 | MacBookAir3,1(11") | MacBookAir4,1(11") |
     |                  |               |                       | MacBookAir3,2(13") | MacBookAir4,2(13") |
+    +------------------+---------------+-----------+-----------+--------------------+--------------------+
     |     Model number |     MB003LL/A | MB543LL/A | MC233LL/A |          MC505LL/A |          MC968ZP/A |
     |                  |               | MB940LL/A | MC234LL/A |          MC503LL/A |          MC969ZP/A |
     |                  |               |           |           |                    |          MC965ZP/A |
     |                  |               |           |           |                    |          MC966ZP/A |
-    |          Battery |                                   N/A |                               35Wh(11") |
+    +------------------+---------------+-----------+-----------+--------------------+--------------------+
+    |          Battery |                  N/A                  |                               35Wh(11") |
+    |                  +---------------------------+-----------+-----------------------------------------+
     |                  |                 37Wh(13") | 40Wh(13") |                               50Wh(13") |
-
+    +------------------+---------------------------+-----------+-----------------------------------------+
 
 == REQUIREMENTS:
 
