@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-;
 require "test/unit"
 require "text_layout"
+$KCODE = 'u'
 
 class TestTextLayout < Test::Unit::TestCase
   def test_span_1
@@ -65,9 +66,29 @@ class TestTextLayout < Test::Unit::TestCase
     RESULT
   end
 
+  def test_empty
+    assert_table [
+      [{:value => ""}, {:value => ""}],
+      [{:value => ""}, {:value => ""}]
+    ], <<-RESULT, :border => true
++--+--+
+|  |  |
++--+--+
+|  |  |
++--+--+
+    RESULT
+  end
+
   def test_successive_colspan
-    assert_table [[{:colspan => 2, :value => "a"}] * 2], <<-RESULT
+    assert_table [
+      [{:colspan => 2, :value => "a"}, {:colspan => 2, :value => "a"}],
+      [{:colspan => 2, :value => "a"}, {:colspan => 2, :value => "a"}]
+    ], <<-RESULT, :border => true
++---+---+
 | a | a |
++---+---+
+| a | a |
++---+---+
     RESULT
   end
 
@@ -91,7 +112,8 @@ class TestTextLayout < Test::Unit::TestCase
   end
 
   def assert_table(array, expected, options={})
-    result = TextLayout::Table.new(array, options).layout
+    layout = TextLayout::Table.new(array, options)
+    result = layout.layout
 
     if expected.rstrip != result
       puts

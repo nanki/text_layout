@@ -81,9 +81,13 @@ class TextLayout::Table
       end
     end
 
-    [:row, :col].each{|dir| @border[dir].map!{|v| v ? 1 : 0 } }
     @num_rows = @unknotted.size
     @num_cols = @unknotted.first.size
+
+    @border[:row][@num_rows - 1] = true
+    @border[:col][@num_cols - 1] = true
+
+    [:row, :col].each{|dir| @border[dir].map!{|v| v ? 1 : 0 } }
   end
 
   def calculate_cell_size
@@ -173,7 +177,7 @@ class TextLayout::Table
           line << cell_format % align(value.to_s, width_with_colspan(cell), cell.attr[:align] || @options[:align])
         end
 
-        line << cross(col, row) if on_border
+        line << cross(col, row) if on_border && @border[:col][col] == 1
       end
 
       if on_border
@@ -182,8 +186,6 @@ class TextLayout::Table
         lines << line_format % line.join(@options[:col_border])
       end
     end
-
-    lines << row_border(@num_rows - 1) if @options[:border] && @options[:border][:bottom]
 
     lines
   end
@@ -203,13 +205,13 @@ class TextLayout::Table
     line << cross(-1, row)
     @num_cols.times do |col|
       line << cell_border(col)
-      line << cross(col, row)
+      line << cross(col, row) if @border[:col][col] == 1
     end
     line
   end
 
   def cell_width(col)
-      @cell_size[:col][col] + @options[:padding].display_width * 2
+    @cell_size[:col][col] + @options[:padding].display_width * 2 * sum(@border[:col][col, 1])
   end
 
   def cell_border(col)
